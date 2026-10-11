@@ -3,7 +3,21 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+from fastapi import Response
+
+@app.middleware("http")
+async def cors(request: Request, call_next):
+    if request.method == "OPTIONS":
+        resp = Response(status_code=204)
+    else:
+        try:
+            resp = await call_next(request)
+        except Exception as e:
+            resp = Response(content=str(e), status_code=500)
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    return resp
 
 base = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(base, "q-vercel-latency.json")
